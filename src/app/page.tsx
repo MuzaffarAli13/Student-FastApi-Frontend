@@ -1,12 +1,15 @@
 
+'use client';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowRight, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find(p => p.id === 'hero-students');
+  const { token } = useAuth();
 
   return (
     <div className="flex flex-col items-center text-center animate-fade-in-up">
@@ -20,7 +23,7 @@ export default function Home() {
         The all-in-one solution for managing students efficiently and effortlessly.
         Built with modern technology for a seamless experience.
       </p>
-      <Link href="/students">
+      <Link href={token ? "/students" : "/login"}>
         <Button size="lg">
           Get Started
           <ArrowRight className="ml-2 h-5 w-5" />
