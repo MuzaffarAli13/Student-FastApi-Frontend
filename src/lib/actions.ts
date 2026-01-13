@@ -4,7 +4,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getStudents, getAuthToken as getApiAuthToken, setAuthToken } from "./api";
+import { getStudents } from "./api";
+import { cookies } from "next/headers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
@@ -30,6 +31,12 @@ const AuthSchema = z.object({
     username: z.string().min(1, 'Username is required'),
     password: z.string().min(1, 'Password is required'),
 });
+
+function getApiAuthToken() {
+    const cookieStore = cookies();
+    return cookieStore.get('token')?.value;
+}
+
 
 export async function signup(prevState: State, formData: FormData) {
     const validatedFields = AuthSchema.safeParse(Object.fromEntries(formData.entries()));
@@ -87,7 +94,6 @@ export async function login(prevState: State, formData: FormData) {
         }
         
         const data = await res.json();
-        // Return token to the client
         return { success: true, token: data.access_token };
         
     } catch (error) {
@@ -111,6 +117,7 @@ export async function createStudent(prevState: State, formData: FormData) {
   
   try {
     const token = getApiAuthToken();
+    if (!token) return { message: "Authentication error." };
     const res = await fetch(`${API_URL}/students`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -144,6 +151,7 @@ export async function updateStudent(id: number, prevState: State, formData: Form
 
   try {
     const token = getApiAuthToken();
+    if (!token) return { message: "Authentication error." };
     const res = await fetch(`${API_URL}/students/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', "Authorization": `Bearer ${token}` },
@@ -164,6 +172,7 @@ export async function updateStudent(id: number, prevState: State, formData: Form
 export async function deleteStudent(id: number) {
   try {
     const token = getApiAuthToken();
+    if (!token) return { message: "Authentication error." };
     const res = await fetch(`${API_URL}/students/${id}`, { 
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
@@ -180,8 +189,9 @@ export async function deleteStudent(id: number) {
 
 export async function deleteAllStudents() {
   try {
-    const students = await getStudents();
     const token = getApiAuthToken();
+    if (!token) return { message: "Authentication error." };
+    const students = await getStudents(token);
     if (students && students.length > 0) {
       await Promise.all(
         students.map((student) =>
