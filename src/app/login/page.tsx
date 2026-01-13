@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { login, State } from '@/lib/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const LoginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -27,6 +28,8 @@ type LoginFormData = z.infer<typeof LoginSchema>;
 
 export default function LoginPage() {
   const { toast } = useToast();
+  const { login: authLogin } = useAuth();
+  const router = useRouter();
   const [state, formAction] = useFormState<State, FormData>(login, { message: null, errors: {} });
   const searchParams = useSearchParams();
   const signupMessage = searchParams.get('message');
@@ -41,14 +44,17 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (state.message && !state.success) {
+    if (state.success && state.token) {
+        authLogin(state.token);
+        router.push('/students');
+    } else if (state.message && !state.success) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
         description: state.message,
       });
     }
-  }, [state, toast]);
+  }, [state, toast, authLogin, router]);
   
   const formErrors = state.errors || errors;
 

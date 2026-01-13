@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getStudents, getAuthToken, setAuthToken } from "./api";
+import { getStudents, getAuthToken as getApiAuthToken, setAuthToken } from "./api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
@@ -23,6 +23,7 @@ export type State = {
   };
   message?: string | null;
   success?: boolean;
+  token?: string | null;
 };
 
 const AuthSchema = z.object({
@@ -82,18 +83,16 @@ export async function login(prevState: State, formData: FormData) {
         
         if (!res.ok) {
             const errorData = await res.json();
-            return { message: errorData.detail || 'Failed to login.' };
+            return { message: errorData.detail || 'Failed to login.', success: false };
         }
         
         const data = await res.json();
-        setAuthToken(data.access_token);
+        // Return token to the client
+        return { success: true, token: data.access_token };
         
     } catch (error) {
-        return { message: 'Network Error: Failed to login.' };
+        return { message: 'Network Error: Failed to login.', success: false };
     }
-
-    revalidatePath("/students");
-    redirect('/students');
 }
 
 export async function createStudent(prevState: State, formData: FormData) {
@@ -111,7 +110,7 @@ export async function createStudent(prevState: State, formData: FormData) {
   }
   
   try {
-    const token = getAuthToken();
+    const token = getApiAuthToken();
     const res = await fetch(`${API_URL}/students`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -144,7 +143,7 @@ export async function updateStudent(id: number, prevState: State, formData: Form
   }
 
   try {
-    const token = getAuthToken();
+    const token = getApiAuthToken();
     const res = await fetch(`${API_URL}/students/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', "Authorization": `Bearer ${token}` },
@@ -164,7 +163,7 @@ export async function updateStudent(id: number, prevState: State, formData: Form
 
 export async function deleteStudent(id: number) {
   try {
-    const token = getAuthToken();
+    const token = getApiAuthToken();
     const res = await fetch(`${API_URL}/students/${id}`, { 
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
@@ -182,7 +181,7 @@ export async function deleteStudent(id: number) {
 export async function deleteAllStudents() {
   try {
     const students = await getStudents();
-    const token = getAuthToken();
+    const token = getApiAuthToken();
     if (students && students.length > 0) {
       await Promise.all(
         students.map((student) =>

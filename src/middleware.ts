@@ -8,11 +8,15 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (!token && pathname.startsWith('/students')) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
   }
   
   if (token && (pathname === '/login' || pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/students', request.url))
+    const url = request.nextUrl.clone()
+    url.pathname = '/students'
+    return NextResponse.redirect(url)
   }
 
   return NextResponse.next()

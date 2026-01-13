@@ -25,21 +25,24 @@ export function deleteAuthToken() {
     cookieStore.delete('token');
 }
 
-export async function getStudents(): Promise<Student[]> {
+export async function getStudents(token?: string | null): Promise<Student[]> {
   noStore();
   try {
-    const token = getAuthToken();
-    if (!token) return [];
+    const authToken = token || getAuthToken();
+    if (!authToken) return [];
     
     const res = await fetch(`${API_URL}/students`, {
       cache: 'no-store',
       headers: {
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${authToken}`
       }
     });
 
     if (res.status === 401) {
-        deleteAuthToken();
+        // This might be handled differently on the client
+        if (typeof window === 'undefined') {
+            deleteAuthToken();
+        }
         return [];
     }
 

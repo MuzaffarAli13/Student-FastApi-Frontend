@@ -1,22 +1,32 @@
 
+'use client';
 import { getStudents } from "@/lib/api";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { StudentsClientPage } from "@/components/students/StudentsClientPage";
 import { TableSkeleton } from "@/components/students/TableSkeleton";
-
-export const metadata = {
-  title: "Students | StudentVerse",
-};
-
-async function StudentsList() {
-    const students = await getStudents();
-    return <StudentsClientPage students={students} />;
-}
+import { useAuth } from "@/context/AuthContext";
+import { Student } from "@/lib/definitions";
 
 export default function StudentsPage() {
-  return (
-    <Suspense fallback={<TableSkeleton />}>
-      <StudentsList />
-    </Suspense>
-  );
+    const { token } = useAuth();
+    const [students, setStudents] = useState<Student[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchStudents() {
+            if (token) {
+                setLoading(true);
+                const data = await getStudents(token);
+                setStudents(data);
+                setLoading(false);
+            }
+        }
+        fetchStudents();
+    }, [token]);
+
+    if (loading) {
+        return <TableSkeleton />;
+    }
+
+    return <StudentsClientPage students={students} />;
 }
