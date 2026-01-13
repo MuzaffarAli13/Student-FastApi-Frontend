@@ -22,12 +22,14 @@ export default function StudentsPage() {
                     const data = await getStudents(token);
                     setStudents(data);
                 } catch (error) {
-                    console.error("Failed to fetch students, logging out.");
+                    console.error("Failed to fetch students, logging out.", error);
                     logout();
                     router.push('/login');
                 } finally {
                     setLoading(false);
                 }
+            } else {
+                setLoading(false);
             }
         }
         fetchStudents();

@@ -15,15 +15,12 @@ export async function getStudents(token: string): Promise<Student[]> {
     });
 
     if (!res.ok) {
-      // The client will handle non-2xx responses.
-      // We avoid throwing here to prevent unhandled promise rejections on the client.
-      return [];
+      throw new Error('Failed to fetch students');
     }
     return res.json();
   } catch (error) {
     console.error("API Error:", error);
-    // Return empty array on network error or other fetch-related issues.
-    return [];
+    throw error;
   }
 }
 
